@@ -316,14 +316,23 @@ impl Kscreen {
         mode_id: &str,
         x: i32,
         y: i32,
+        physical: &str,
+        physical_x: i32,
+        physical_y: i32,
     ) -> Result<()> {
         validate_output_name(virtual_output)?;
+        validate_output_name(physical)?;
         let mut args = vec![
             format!("output.{virtual_output}.mirror.none"),
             format!("output.{virtual_output}.mode.{mode_id}"),
             format!("output.{virtual_output}.scale.1"),
             format!("output.{virtual_output}.position.{x},{y}"),
             format!("output.{virtual_output}.enable"),
+            // Keep the physical output pinned in place in the same atomic
+            // transaction; otherwise KScreen may reposition it and the two
+            // outputs end up overlapping (which looks like mirroring).
+            format!("output.{physical}.position.{physical_x},{physical_y}"),
+            format!("output.{physical}.enable"),
         ];
         if args.iter().any(|a| a.contains("..")) {
             bail!("invalid KScreen argument generated");

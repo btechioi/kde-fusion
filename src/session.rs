@@ -391,7 +391,7 @@ impl SessionManager {
                     session.request.layout,
                 );
                 kscreen
-                    .configure_extend(&output_name, &mode.id, x, y)
+                    .configure_extend(&output_name, &mode.id, x, y, &physical.name, physical.pos_x, physical.pos_y)
                     .await?;
                 if session.request.mode == SessionMode::Headless {
                     let phys_names: Vec<&str> = session
