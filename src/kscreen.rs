@@ -9,7 +9,7 @@ use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use std::path::Path;
 
-use crate::util::{atomic_write, now_unix, run_checked};
+use crate::util::{atomic_write, first_nonempty, now_unix, run_checked};
 
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub struct ModeInfo {
@@ -295,7 +295,16 @@ impl Kscreen {
         if args.is_empty() {
             return Ok(());
         }
-        run_checked(&self.program, args).await?;
+        let out = run_checked(&self.program, args).await?;
+        // kscreen-doctor exits 0 even when applying the config fails, so inspect
+        // its output for a failure message.
+        let combined = format!("{}\n{}", out.stdout, out.stderr).to_lowercase();
+        if combined.contains("applying config failed") || combined.contains("failed!") {
+            bail!(
+                "kscreen-doctor failed to apply config: {}",
+                first_nonempty(&out.stderr, &out.stdout)
+            );
+        }
         Ok(())
     }
 
@@ -453,22 +462,26 @@ pub fn format_scale(scale: f64) -> String {
     }
 }
 
-pub fn edge_position(
+pub fn edge_positions(
     physical: &OutputInfo,
     virtual_width: u32,
     virtual_height: u32,
     layout: crate::types::Layout,
-) -> (i32, i32) {
+) -> ((i32, i32), (i32, i32)) {
     use crate::types::Layout;
     let pw = physical.logical_width as i32;
     let ph = physical.logical_height as i32;
     let vw = virtual_width as i32;
     let vh = virtual_height as i32;
+    let (px0, py0) = (physical.pos_x, physical.pos_y);
     match layout {
-        Layout::Right => (physical.pos_x + pw, physical.pos_y),
-        Layout::Left => (physical.pos_x - vw, physical.pos_y),
-        Layout::Top => (physical.pos_x, physical.pos_y - vh),
-        Layout::Bottom => (physical.pos_x, physical.pos_y + ph),
+        // Physical stays put; virtual is placed beside it.
+        Layout::Right => ((px0 + pw, py0), (px0, py0)),
+        Layout::Bottom => ((px0, py0 + ph), (px0, py0)),
+        // Virtual takes the primary (origin) spot and the physical moves so
+        // that no coordinate goes negative (KScreen rejects negative positions).
+        Layout::Left => ((px0, py0), (px0 + vw, py0)),
+        Layout::Top => ((px0, py0), (px0, py0 + vh)),
     }
 }
 
@@ -528,10 +541,23 @@ mod tests {
     fn computes_edge_positions() {
         let snap = snapshot();
         let edp = snap.find("eDP-1").unwrap();
-        assert_eq!(edge_position(edp, 1920, 1080, Layout::Right), (1822, 0));
-        assert_eq!(edge_position(edp, 1920, 1080, Layout::Left), (-1920, 0));
-        assert_eq!(edge_position(edp, 1920, 1080, Layout::Top), (0, -1080));
-        assert_eq!(edge_position(edp, 1920, 1080, Layout::Bottom), (0, 1024));
+        // (virtual_pos, physical_pos)
+        assert_eq!(
+            edge_positions(edp, 1920, 1080, Layout::Right),
+            ((1822, 0), (0, 0))
+        );
+        assert_eq!(
+            edge_positions(edp, 1920, 1080, Layout::Left),
+            ((0, 0), (1920, 0))
+        );
+        assert_eq!(
+            edge_positions(edp, 1920, 1080, Layout::Top),
+            ((0, 0), (0, 1080))
+        );
+        assert_eq!(
+            edge_positions(edp, 1920, 1080, Layout::Bottom),
+            ((0, 1024), (0, 0))
+        );
     }
 
     #[test]

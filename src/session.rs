@@ -17,7 +17,7 @@ use tokio::sync::{Mutex, RwLock};
 use crate::config::ConfigStore;
 use crate::control;
 use crate::discovery::DiscoveryRegistry;
-use crate::kscreen::{edge_position, Kscreen, KscreenSnapshot, OutputInfo};
+use crate::kscreen::{edge_positions, Kscreen, KscreenSnapshot, OutputInfo};
 use crate::moonlight::{MoonlightProcess, MoonlightSpec};
 use crate::notify;
 use crate::secrets::SecretStore;
@@ -384,14 +384,16 @@ impl SessionManager {
                     }
                 }
                 let mode = mode.context("virtual output has no usable mode")?;
-                let (x, y) = edge_position(
+                let (virtual_pos, physical_pos) = edge_positions(
                     &physical,
                     virtual_output.logical_width,
                     virtual_output.logical_height,
                     session.request.layout,
                 );
+                let (x, y) = virtual_pos;
+                let (px, py) = physical_pos;
                 kscreen
-                    .configure_extend(&output_name, &mode.id, x, y, &physical.name, physical.pos_x, physical.pos_y)
+                    .configure_extend(&output_name, &mode.id, x, y, &physical.name, px, py)
                     .await?;
                 if session.request.mode == SessionMode::Headless {
                     let phys_names: Vec<&str> = session
