@@ -4,8 +4,9 @@ KDE Fusion mirrors or extends a **KDE Plasma 6 Wayland** desktop to another PC
 over the LAN. It is a Rust daemon plus a Kirigami/QML frontend, and it drives
 Sunshine on the host and Moonlight on the viewer automatically.
 
-Both PCs run CachyOS/Arch with Plasma 6 on Wayland. Either PC can be the host
-or the viewer; the same package is installed on both.
+Both PCs run a KDE Plasma 6 Wayland distribution (Arch/CachyOS, Fedora or
+Debian/Ubuntu are supported). Either PC can be the host or the viewer; the
+same package is installed on both.
 
 ```
  Host (Plasma Wayland)                              Viewer (Plasma Wayland)
@@ -192,7 +193,13 @@ kdefusionctl wait --phase streaming --timeout-secs 120
 Add `--json` to any command for raw output. The API base can be overridden with
 `--api` or `KDEFUSION_API`.
 
-## Configuration
+## Documentation
+
+- `docs/SETUP.md` - full installation and setup guide (dependencies, Sunshine,
+  VA-API, audio, firewall, pairing, sessions, CLI)
+- `docs/TROUBLESHOOTING.md` - symptom-based troubleshooting
+- `docs/PROTOCOL.md` - control channel protocol
+- `packaging/README.md` - building packages per distribution
 
 The daemon writes `$XDG_CONFIG_HOME/kdefusion/config.toml` (normally
 `~/.config/kdefusion/config.toml`). The file is created with `0600` permissions
