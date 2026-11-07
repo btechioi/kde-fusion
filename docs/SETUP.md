@@ -184,6 +184,29 @@ sudo firewall-cmd --reload
 sudo ufw allow 47811/tcp
 ```
 
+### Sunshine streaming ports
+
+The PC that shares its screen also runs Sunshine, so its streaming ports must be
+reachable from the viewing PC. KDE Fusion starts Sunshine itself, but it does not
+change the firewall.
+
+```bash
+# Fedora / firewalld
+sudo firewall-cmd --permanent \
+  --add-port=47984/tcp --add-port=47989/tcp --add-port=48010/tcp \
+  --add-port=47998/udp --add-port=47999/udp --add-port=48000/udp --add-port=48002/udp
+sudo firewall-cmd --reload
+
+# Debian / Ubuntu / ufw
+sudo ufw allow 47984/tcp
+sudo ufw allow 47989/tcp
+sudo ufw allow 48010/tcp
+sudo ufw allow 47998:48002/udp
+```
+
+The viewing PC only makes outbound connections, so it needs no inbound rules for
+streaming.
+
 mDNS discovery (`_kdefusion._tcp.local.`) requires multicast on the LAN. If
 discovery does not work, enter the peer's IP address manually in **Devices**.
 

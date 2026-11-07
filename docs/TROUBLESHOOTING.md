@@ -172,6 +172,31 @@ Look for `VAEntrypointEncSlice` or `VAEntrypointEncSliceLP`:
   Sunshine expects for your system (for example `nvenc`) and run Diagnostics.
 - If HEVC is unavailable, KDE Fusion automatically falls back to H.264.
 
+### Intel: `i965` is ignored when Sunshine has file capabilities
+
+Some Sunshine packages (notably the Fedora RPM) install `/usr/bin/sunshine`
+with `cap_sys_admin,cap_sys_nice`. A binary with file capabilities runs in
+secure-execution mode, and libva ignores `LIBVA_DRIVER_NAME` there. On older
+Intel GPUs this makes libva load `iHD`, which may expose no H.264/HEVC encode
+entrypoints, so Sunshine silently falls back to software `libx264`.
+
+Check and remove the capabilities when Sunshine captures through KWin/Wayland
+(no KMS access is needed):
+
+```bash
+getcap /usr/bin/sunshine
+sudo setcap -r /usr/bin/sunshine
+```
+
+Then verify the legacy driver works:
+
+```bash
+LIBVA_DRIVER_NAME=i965 vainfo
+```
+
+Package updates re-add the capabilities, so repeat this after upgrading
+Sunshine.
+
 ## Display layout is not restored
 
 KDE Fusion snapshots the layout before changing it and restores it on stop or on

@@ -440,6 +440,17 @@ impl SessionManager {
         self.check_stop()?;
 
         let mut peer = session.peer.clone();
+        if !peer.sunshine_paired && sunshine::is_client_paired(&peer.name) {
+            // Previous pairing was approved by Sunshine but the session failed
+            // afterwards, so the local flag never got persisted.
+            tracing::info!(
+                "Sunshine already trusts {}; skipping the Moonlight pairing step",
+                peer.name
+            );
+            self.state.set_sunshine_paired(&peer.device_id, true).ok();
+            peer.sunshine_paired = true;
+            session.peer = peer.clone();
+        }
         if !peer.sunshine_paired {
             self.set_phase(Phase::Pairing, "Pairing Moonlight with Sunshine")
                 .await;

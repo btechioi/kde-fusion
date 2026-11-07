@@ -51,6 +51,39 @@ pub fn paths() -> SunshinePaths {
     }
 }
 
+/// Names of clients (Moonlight instances) that Sunshine has already paired.
+/// Sunshine records them in `sunshine_state.json` under `root.named_devices`.
+pub fn paired_client_names() -> Vec<String> {
+    let path = paths().dir.join("sunshine_state.json");
+    let Ok(text) = std::fs::read_to_string(&path) else {
+        return Vec::new();
+    };
+    let Ok(value) = serde_json::from_str::<Value>(&text) else {
+        return Vec::new();
+    };
+    value
+        .get("root")
+        .and_then(|root| root.get("named_devices"))
+        .and_then(Value::as_array)
+        .map(|devices| {
+            devices
+                .iter()
+                .filter_map(|device| device.get("name").and_then(Value::as_str))
+                .map(str::to_string)
+                .collect()
+        })
+        .unwrap_or_default()
+}
+
+/// Whether Sunshine already trusts a client with this name.
+pub fn is_client_paired(name: &str) -> bool {
+    let name = name.trim();
+    !name.is_empty()
+        && paired_client_names()
+            .iter()
+            .any(|paired| paired.eq_ignore_ascii_case(name))
+}
+
 /// KWin only allows `zkde_screencast_unstable_v1` for executables with a
 /// matching desktop file.  The Sunshine package usually installs one, but if
 /// it does not (or if Sunshine lives in `/usr/local/bin`) we create a user-level
@@ -184,25 +217,38 @@ pub fn ensure_desktop_app(path: &Path) -> Result<()> {
     } else {
         json!({ "apps": [] })
     };
+    let mut changed = false;
     if !root.get("apps").map(Value::is_array).unwrap_or(false) {
         root["apps"] = json!([]);
+        changed = true;
     }
-    let apps = root["apps"].as_array_mut().expect("apps array");
-    if !apps
-        .iter()
-        .any(|app| app.get("name").and_then(Value::as_str) == Some(DESKTOP_APP))
+    // Sunshine's proc parser requires a top-level "env" object.  Without it
+    // boost::property_tree::get_child throws and Sunshine aborts on startup.
+    if !root.get("env").map(Value::is_object).unwrap_or(false) {
+        root["env"] = json!({});
+        changed = true;
+    }
     {
-        apps.push(json!({
-            "name": DESKTOP_APP,
-            "cmd": "",
-            "working-dir": "",
-            "image-path": "",
-            "auto-detach": true,
-            "wait-all": true,
-            "exit-timeout": 5,
-            "exclude-global-prep-cmd": false,
-            "elevated": false
-        }));
+        let apps = root["apps"].as_array_mut().expect("apps array");
+        if !apps
+            .iter()
+            .any(|app| app.get("name").and_then(Value::as_str) == Some(DESKTOP_APP))
+        {
+            apps.push(json!({
+                "name": DESKTOP_APP,
+                "cmd": "",
+                "working-dir": "",
+                "image-path": "",
+                "auto-detach": true,
+                "wait-all": true,
+                "exit-timeout": 5,
+                "exclude-global-prep-cmd": false,
+                "elevated": false
+            }));
+            changed = true;
+        }
+    }
+    if changed {
         let backup = path.with_extension("json.kdefusion.bak");
         if path.exists() && !backup.exists() {
             std::fs::copy(path, &backup).ok();
@@ -212,7 +258,7 @@ pub fn ensure_desktop_app(path: &Path) -> Result<()> {
             serde_json::to_vec_pretty(&root)?.as_slice(),
             Some(0o600),
         )?;
-        tracing::info!("added Desktop app to {}", path.display());
+        tracing::info!("updated Sunshine apps file {}", path.display());
     }
     Ok(())
 }
@@ -478,7 +524,11 @@ pub async fn probe_http(host: &str, port: u16, path: &str) -> Result<u16> {
 pub async fn wait_ready(host: &str, port: u16, timeout: Duration) -> Result<()> {
     let code = poll_until(timeout, Duration::from_millis(300), || async {
         match probe_http(host, port, "/api/config").await {
-            Ok(code) if code == 200 || code == 401 => Some(code),
+            // 200: ready and authenticated by a stored session.
+            // 401: ready, admin exists, no credentials supplied.
+            // 3xx: fresh install; Sunshine redirects to /welcome until
+            //      ensure_admin() creates the first credentials.
+            Ok(code) if (200..500).contains(&code) => Some(code),
             _ => None,
         }
     })
@@ -838,6 +888,23 @@ mod tests {
         let value: Value = serde_json::from_str(&std::fs::read_to_string(&path).unwrap()).unwrap();
         let apps = value["apps"].as_array().unwrap();
         assert_eq!(apps.iter().filter(|a| a["name"] == DESKTOP_APP).count(), 1);
+        assert!(value["env"].is_object());
+        std::fs::remove_dir_all(dir).ok();
+    }
+
+    #[test]
+    fn existing_apps_file_gets_required_env_section() {
+        let dir = std::env::temp_dir().join(format!(
+            "kdefusion-apps-env-{}",
+            crate::util::random_hex(4)
+        ));
+        std::fs::create_dir_all(&dir).unwrap();
+        let path = dir.join("apps.json");
+        std::fs::write(&path, r#"{"apps":[{"name":"Desktop","cmd":""}]}"#).unwrap();
+        ensure_desktop_app(&path).unwrap();
+        let value: Value = serde_json::from_str(&std::fs::read_to_string(&path).unwrap()).unwrap();
+        assert!(value["env"].is_object());
+        assert_eq!(value["apps"].as_array().unwrap().len(), 1);
         std::fs::remove_dir_all(dir).ok();
     }
 

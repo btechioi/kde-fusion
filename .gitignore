@@ -11,3 +11,8 @@
 
 # Logs
 *.log
+
+# Packaging build artifacts
+/packaging/*.tar.gz
+/dist/
+/debian/

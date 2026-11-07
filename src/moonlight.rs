@@ -5,12 +5,14 @@
 //! through a shell.
 
 use anyhow::{bail, Context, Result};
+use std::path::PathBuf;
 use std::process::Stdio;
+use std::sync::{Arc, Mutex};
 use std::time::Duration;
 use tokio::io::{AsyncBufReadExt, BufReader};
 use tokio::process::{Child, Command};
 
-use crate::util::{command_exists, command_path};
+use crate::util::{command_exists, command_path, home_dir};
 
 /// Flatpak application id used when Moonlight is not installed natively.
 /// Moonlight is distributed as a Flatpak on Fedora and Debian, where the
@@ -195,6 +197,8 @@ impl MoonlightProcess {
             .stdin(Stdio::null())
             .stdout(Stdio::piped())
             .stderr(Stdio::piped())
+            .process_group(0)
+            .kill_on_drop(true)
             .spawn()
             .context("start moonlight")?;
         let pid = child.id().unwrap_or(0);
@@ -218,28 +222,47 @@ impl MoonlightProcess {
 
     pub async fn stop(mut self) {
         tracing::info!("stopping Moonlight for {}", self.host);
-        // Ask Moonlight to close the session cleanly first.
+        // Ask Moonlight to close the session cleanly first.  The CLI can open a
+        // modal dialog and never exit (same behaviour as `pair`), so give it its
+        // own process group and tear it down after a short grace period.
         if let Some(mut command) = base_command() {
-            let _ = tokio::time::timeout(
-                Duration::from_secs(3),
-                command
-                    .args(["quit", &self.host])
-                    .stdin(Stdio::null())
-                    .stdout(Stdio::null())
-                    .stderr(Stdio::null())
-                    .status(),
-            )
-            .await;
+            if let Ok(mut child) = command
+                .args(["quit", &self.host])
+                .stdin(Stdio::null())
+                .stdout(Stdio::null())
+                .stderr(Stdio::null())
+                .process_group(0)
+                .kill_on_drop(true)
+                .spawn()
+            {
+                let quit_pid = child.id().unwrap_or(0);
+                if tokio::time::timeout(Duration::from_secs(3), child.wait())
+                    .await
+                    .is_err()
+                {
+                    kill_process_group(quit_pid);
+                    let _ = tokio::time::timeout(Duration::from_secs(1), child.wait()).await;
+                }
+            }
         }
         if matches!(self.child.try_wait(), Ok(None)) {
+            // A fullscreen Flatpak stream nests `moonlight` under one or more
+            // `bwrap` wrappers, so killing only the direct child would orphan
+            // the actual stream.  The child leads its own process group; kill
+            // the whole group.
+            kill_process_group(self.pid);
             let _ = self.child.start_kill();
         }
         let _ = tokio::time::timeout(Duration::from_secs(3), self.child.wait()).await;
+        // Already reaped: prevent `Drop` from signalling this PID again (it may
+        // have been reused by an unrelated process group).
+        self.pid = 0;
     }
 }
 
 impl Drop for MoonlightProcess {
     fn drop(&mut self) {
+        kill_process_group(self.pid);
         let _ = self.child.start_kill();
     }
 }
@@ -258,6 +281,108 @@ where
     });
 }
 
+/// Directory Moonlight uses for its QSettings file under the platform config
+/// directory.  The same name is used inside the Flatpak sandbox.
+const CONFIG_DIR_NAME: &str = "Moonlight Game Streaming Project";
+
+fn moonlight_config_paths() -> Vec<PathBuf> {
+    let mut paths = Vec::new();
+    if let Some(dir) = dirs::config_dir() {
+        paths.push(dir.join(CONFIG_DIR_NAME).join("Moonlight.conf"));
+    }
+    let home = home_dir();
+    paths.push(
+        home.join(".config")
+            .join(CONFIG_DIR_NAME)
+            .join("Moonlight.conf"),
+    );
+    paths.push(
+        home.join(".var/app")
+            .join(FLATPAK_APP)
+            .join("config")
+            .join(CONFIG_DIR_NAME)
+            .join("Moonlight.conf"),
+    );
+    paths.dedup();
+    paths
+}
+
+/// Look for a paired host in a Moonlight config file.  QSettings stores host
+/// entries as `<index>\<key>=<value>` inside `[hosts]`; a host is paired once
+/// its block carries an `srvcert`.
+fn config_has_paired_host(text: &str, host: &str) -> bool {
+    let host = host.trim();
+    if host.is_empty() {
+        return false;
+    }
+    let mut index = None;
+    for raw in text.lines() {
+        let line = raw.trim();
+        if line.is_empty() || line.starts_with('[') || line.starts_with(';') {
+            continue;
+        }
+        let Some((key, value)) = line.split_once('=') else {
+            continue;
+        };
+        let Some((prefix, field)) = key.split_once('\\') else {
+            continue;
+        };
+        if matches!(field, "localaddress" | "manualaddress" | "hostname")
+            && value.trim() == host
+        {
+            index = Some(prefix.to_string());
+            break;
+        }
+    }
+    let Some(index) = index else {
+        return false;
+    };
+    let needle = format!("{index}\\srvcert=");
+    text.lines()
+        .any(|line| line.trim_start().starts_with(&needle))
+}
+
+fn moonlight_has_paired_host(host: &str) -> bool {
+    moonlight_config_paths().iter().any(|path| {
+        std::fs::read_to_string(path)
+            .map(|text| config_has_paired_host(&text, host))
+            .unwrap_or(false)
+    })
+}
+
+fn spawn_capture<R>(reader: R) -> Arc<Mutex<String>>
+where
+    R: tokio::io::AsyncRead + Unpin + Send + 'static,
+{
+    let sink = Arc::new(Mutex::new(String::new()));
+    let buffer = sink.clone();
+    tokio::spawn(async move {
+        let mut lines = BufReader::new(reader).lines();
+        while let Ok(Some(line)) = lines.next_line().await {
+            let mut guard = buffer.lock().unwrap();
+            if guard.len() < 8192 {
+                guard.push_str(&line);
+                guard.push('\n');
+            }
+        }
+    });
+    sink
+}
+
+fn kill_process_group(pid: u32) {
+    if pid == 0 {
+        return;
+    }
+    // The child was started in its own process group (see `process_group`),
+    // so a negative PID reaches the Flatpak/bwrap wrapper and Moonlight.
+    let _ = std::process::Command::new("kill")
+        .args(["-KILL", "--", &format!("-{pid}")])
+        .stdin(Stdio::null())
+        .stdout(Stdio::null())
+        .stderr(Stdio::null())
+        .status();
+}
+
 pub async fn pair(host: &str, pin: &str) -> Result<String> {
     let mut command = base_command().ok_or_else(|| anyhow::anyhow!(missing_message()))?;
     if host.trim().is_empty() || host.starts_with('-') {
@@ -266,26 +391,63 @@ pub async fn pair(host: &str, pin: &str) -> Result<String> {
     if pin.len() != 4 || !pin.chars().all(|c| c.is_ascii_digit()) {
         bail!("pairing PIN must be exactly four digits");
     }
-    tracing::info!("pairing Moonlight with {host} using a supplied PIN");
-    let output = tokio::time::timeout(
-        Duration::from_secs(45),
-        command
-            .args(["pair", host, "--pin", pin])
-            .stdin(Stdio::null())
-            .output(),
-    )
-    .await
-    .context("moonlight pair timed out")?
-    .context("start moonlight pair")?;
-    let text = format!(
-        "{}\n{}",
-        String::from_utf8_lossy(&output.stdout),
-        String::from_utf8_lossy(&output.stderr)
-    );
-    if !output.status.success() {
-        bail!("moonlight pair failed ({}): {}", output.status, text.trim());
+
+    // If Moonlight already holds a certificate for this host there is nothing
+    // to do.  This also short-circuits a re-pair after a failed session.
+    if moonlight_has_paired_host(host) {
+        tracing::info!("Moonlight already holds a certificate for {host}");
+        return Ok("already paired".to_string());
     }
-    Ok(text)
+
+    tracing::info!("pairing Moonlight with {host} using a supplied PIN");
+    let mut child = command
+        .args(["pair", host, "--pin", pin])
+        .stdin(Stdio::null())
+        .stdout(Stdio::null())
+        .stderr(Stdio::piped())
+        .process_group(0)
+        .kill_on_drop(true)
+        .spawn()
+        .context("start moonlight pair")?;
+    let pid = child.id().unwrap_or(0);
+    let output = child.stderr.take().map(spawn_capture);
+
+    // The CLI never exits after a successful pair: it opens a "pairing
+    // completed" dialog and waits for a click.  Waiting for the process would
+    // always time out, so use the server certificate written to Moonlight's
+    // config as the success signal and stop the GUI ourselves.
+    let deadline = tokio::time::Instant::now() + Duration::from_secs(45);
+    loop {
+        if moonlight_has_paired_host(host) {
+            kill_process_group(pid);
+            let _ = tokio::time::timeout(Duration::from_secs(3), child.wait()).await;
+            return Ok("paired".to_string());
+        }
+        match child.try_wait() {
+            Ok(Some(status)) => {
+                let text = output
+                    .as_ref()
+                    .map(|buffer| buffer.lock().unwrap().clone())
+                    .unwrap_or_default();
+                if status.success() {
+                    return Ok(text);
+                }
+                bail!("moonlight pair failed ({status}): {}", text.trim());
+            }
+            Ok(None) => {}
+            Err(err) => bail!("cannot monitor moonlight: {err}"),
+        }
+        if tokio::time::Instant::now() >= deadline {
+            kill_process_group(pid);
+            let _ = tokio::time::timeout(Duration::from_secs(3), child.wait()).await;
+            let text = output
+                .as_ref()
+                .map(|buffer| buffer.lock().unwrap().clone())
+                .unwrap_or_default();
+            bail!("moonlight pair timed out: {}", text.trim());
+        }
+        tokio::time::sleep(Duration::from_millis(250)).await;
+    }
 }
 
 pub async fn quit(host: &str) -> Result<()> {
@@ -356,6 +518,27 @@ mod tests {
         assert!(s.validate().is_err());
         s.host = "host name".into();
         assert!(s.validate().is_err());
+    }
+
+    #[test]
+    fn detects_paired_host_in_config() {
+        let config = "\
+[General]
+certificate=\"x\"
+[hosts]
+1\\hostname=My-Laptop
+1\\localaddress=192.168.1.12
+1\\manualaddress=192.168.1.12
+1\\srvcert=@ByteArray(abc)
+2\\hostname=Other
+2\\manualaddress=192.168.1.9
+";
+        assert!(config_has_paired_host(config, "192.168.1.12"));
+        assert!(config_has_paired_host(config, "My-Laptop"));
+        // Present but without a certificate: not paired yet.
+        assert!(!config_has_paired_host(config, "192.168.1.9"));
+        assert!(!config_has_paired_host(config, "10.0.0.1"));
+        assert!(!config_has_paired_host(config, ""));
     }
 
     #[test]
