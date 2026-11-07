@@ -72,14 +72,7 @@ fn run() -> Result<()> {
 
     ensure_daemon(&api_base);
 
-    let mut command = Command::new("sh");
-    // Launch the QML runtime with argv[0] set to "kdefusion" so Qt derives
-    // the application name (and thus the Wayland app id / taskbar icon) from
-    // it instead of the runtime binary name ("qml").
-    command
-        .arg("-c")
-        .arg("exec -a kdefusion \"$0\" \"$@\"")
-        .arg(&runtime);
+    let mut command = Command::new(&runtime);
     // Let Qt pick the platform plugin.  On a Plasma Wayland session this will
     // be the Wayland plugin; on X11 it will be xcb.  A user can override it with
     // QT_QPA_PLATFORM as usual.
@@ -175,6 +168,26 @@ fn api_base() -> String {
 }
 
 fn find_runtime() -> Option<PathBuf> {
+    // Prefer a copy of the Qt QML runtime that is named "kdefusion" so that
+    // Qt derives the application name (and thus the Wayland app id / taskbar
+    // icon) from it instead of "qml".
+    let mut bundled: Vec<PathBuf> = Vec::new();
+    if let Ok(exe) = std::env::current_exe() {
+        if let Some(dir) = exe.parent() {
+            bundled.push(dir.join("../lib/kdefusion/kdefusion").canonicalize().unwrap_or_else(|_| dir.join("../lib/kdefusion/kdefusion")));
+            bundled.push(dir.join("kdefusion-qml"));
+        }
+    }
+    bundled.push(PathBuf::from("/usr/lib/kdefusion/kdefusion"));
+    bundled.push(PathBuf::from("/usr/lib64/kdefusion/kdefusion"));
+    bundled.push(PathBuf::from("/usr/local/lib/kdefusion/kdefusion"));
+    if let Some(home) = std::env::var_os("HOME") {
+        bundled.push(PathBuf::from(home).join(".local/lib/kdefusion/kdefusion"));
+    }
+    if let Some(found) = bundled.into_iter().find(|path| path.is_file()) {
+        return Some(found);
+    }
+
     let candidates = [
         "/usr/lib/qt6/bin/qml",
         "/usr/lib64/qt6/bin/qml",

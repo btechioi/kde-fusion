@@ -42,6 +42,13 @@ package() {
   install -Dm755 target/release/kdefusionctl "$pkgdir/usr/bin/kdefusionctl"
   install -Dm755 target/release/kdefusion "$pkgdir/usr/bin/kdefusion"
 
+  # Bundle a copy of the Qt QML runtime named "kdefusion".
+  if command -v qml-qt6 >/dev/null 2>&1; then
+    install -Dm755 "$(command -v qml-qt6)" "$pkgdir/usr/lib/kdefusion/kdefusion"
+  elif command -v qml >/dev/null 2>&1; then
+    install -Dm755 "$(command -v qml)" "$pkgdir/usr/lib/kdefusion/kdefusion"
+  fi
+
   install -Dm644 packaging/kdefusion.desktop \
     "$pkgdir/usr/share/applications/kdefusion.desktop"
   install -Dm644 packaging/kdefusion.svg \

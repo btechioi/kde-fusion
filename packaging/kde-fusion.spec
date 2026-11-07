@@ -42,6 +42,14 @@ install -Dm755 target/release/kdefusiond %{buildroot}%{_bindir}/kdefusiond
 install -Dm755 target/release/kdefusionctl %{buildroot}%{_bindir}/kdefusionctl
 install -Dm755 target/release/kdefusion %{buildroot}%{_bindir}/kdefusion
 
+# Bundle a copy of the Qt QML runtime named "kdefusion" so Qt derives the
+# application name (and thus the Wayland app id / taskbar icon) from it.
+if command -v qml-qt6 >/dev/null 2>&1; then
+  install -Dm755 "$(command -v qml-qt6)" %{buildroot}%{_libdir}/kdefusion/kdefusion
+elif command -v qml >/dev/null 2>&1; then
+  install -Dm755 "$(command -v qml)" %{buildroot}%{_libdir}/kdefusion/kdefusion
+fi
+
 mkdir -p %{buildroot}%{_datadir}/kdefusion
 cp -a qml %{buildroot}%{_datadir}/kdefusion/qml
 
@@ -57,6 +65,7 @@ install -Dm644 systemd/kdefusiond.service %{buildroot}%{_userunitdir}/kdefusiond
 %{_bindir}/kdefusiond
 %{_bindir}/kdefusionctl
 %{_bindir}/kdefusion
+%{_libdir}/kdefusion/
 %{_datadir}/kdefusion/
 %{_datadir}/applications/kdefusion.desktop
 %{_datadir}/icons/hicolor/scalable/apps/kdefusion.svg

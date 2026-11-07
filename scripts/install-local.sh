@@ -30,6 +30,13 @@ install -d "$BINDIR" "$DATADIR/kdefusion" "$ICONDIR" "$APPLICATIONSDIR" "$UNITDI
 install -m755 target/release/kdefusiond "$BINDIR/kdefusiond"
 install -m755 target/release/kdefusionctl "$BINDIR/kdefusionctl"
 install -m755 target/release/kdefusion "$BINDIR/kdefusion"
+# Copy the Qt QML runtime under a "kdefusion" name so Qt derives the
+# application name (and thus the Wayland app id / taskbar icon) from it.
+QML_RUNTIME="$(command -v qml-qt6 || command -v qml6 || command -v qml || true)"
+if [[ -n "$QML_RUNTIME" ]]; then
+  install -d "$PREFIX/lib/kdefusion"
+  install -m755 "$QML_RUNTIME" "$PREFIX/lib/kdefusion/kdefusion"
+fi
 
 rm -rf "$DATADIR/kdefusion/qml"
 cp -a "$ROOT/qml" "$DATADIR/kdefusion/qml"
