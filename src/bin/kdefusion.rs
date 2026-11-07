@@ -72,7 +72,14 @@ fn run() -> Result<()> {
 
     ensure_daemon(&api_base);
 
-    let mut command = Command::new(&runtime);
+    let mut command = Command::new("sh");
+    // Launch the QML runtime with argv[0] set to "kdefusion" so Qt derives
+    // the application name (and thus the Wayland app id / taskbar icon) from
+    // it instead of the runtime binary name ("qml").
+    command
+        .arg("-c")
+        .arg("exec -a kdefusion \"$0\" \"$@\"")
+        .arg(&runtime);
     // Let Qt pick the platform plugin.  On a Plasma Wayland session this will
     // be the Wayland plugin; on X11 it will be xcb.  A user can override it with
     // QT_QPA_PLATFORM as usual.
