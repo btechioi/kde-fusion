@@ -10,6 +10,7 @@ override_dh_auto_install:
 	install -Dm755 target/release/kdefusiond debian/kde-fusion/usr/bin/kdefusiond
 	install -Dm755 target/release/kdefusionctl debian/kde-fusion/usr/bin/kdefusionctl
 	install -Dm755 target/release/kdefusion debian/kde-fusion/usr/bin/kdefusion
+	install -d debian/kde-fusion/usr/lib/kdefusion
 	if command -v qml-qt6 >/dev/null 2>&1; then \
 	  install -Dm755 "$$(command -v qml-qt6)" debian/kde-fusion/usr/lib/kdefusion/kdefusion; \
 	elif command -v qml >/dev/null 2>&1; then \

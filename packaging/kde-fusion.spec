@@ -13,6 +13,7 @@ Source0:        %{name}-%{version}.tar.gz
 
 BuildRequires:  cargo
 BuildRequires:  rust
+BuildRequires:  qt6-qtbase
 
 Requires:       krfb
 Requires:       kscreen
@@ -44,6 +45,7 @@ install -Dm755 target/release/kdefusion %{buildroot}%{_bindir}/kdefusion
 
 # Bundle a copy of the Qt QML runtime named "kdefusion" so Qt derives the
 # application name (and thus the Wayland app id / taskbar icon) from it.
+mkdir -p %{buildroot}%{_libdir}/kdefusion
 if command -v qml-qt6 >/dev/null 2>&1; then
   install -Dm755 "$(command -v qml-qt6)" %{buildroot}%{_libdir}/kdefusion/kdefusion
 elif command -v qml >/dev/null 2>&1; then
