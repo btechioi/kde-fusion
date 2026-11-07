@@ -53,6 +53,8 @@ command -v gtk-update-icon-cache >/dev/null 2>&1 \
   && gtk-update-icon-cache -f -t "$DATADIR/icons/hicolor" >/dev/null 2>&1 || true
 command -v systemctl >/dev/null 2>&1 \
   && systemctl --user daemon-reload >/dev/null 2>&1 || true
+command -v systemctl >/dev/null 2>&1 \
+  && systemctl --user enable --now kdefusiond >/dev/null 2>&1 || true
 
 cat <<EOF
 

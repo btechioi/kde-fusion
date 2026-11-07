@@ -6,8 +6,10 @@
 
 use anyhow::{bail, Context, Result};
 use kdefusion::{QML_DIR_ENV, QML_RUNTIME_ENV, VERSION};
+use std::net::ToSocketAddrs;
 use std::path::{Path, PathBuf};
 use std::process::{Command, Stdio};
+use std::time::Duration;
 
 fn main() {
     if let Err(err) = run() {
@@ -67,6 +69,8 @@ fn run() -> Result<()> {
     let api_base = arg_value(&args, "--api-base")
         .map(|path| path.to_string_lossy().to_string())
         .unwrap_or_else(api_base);
+
+    ensure_daemon(&api_base);
 
     let mut command = Command::new(&runtime);
     // Let Qt pick the platform plugin.  On a Plasma Wayland session this will
@@ -217,6 +221,95 @@ fn find_qml_dir() -> Option<PathBuf> {
     candidates
         .into_iter()
         .find(|dir| dir.join("Main.qml").is_file())
+}
+
+fn ensure_daemon(api_base: &str) {
+    if daemon_reachable(api_base) {
+        return;
+    }
+    let _ = Command::new("systemctl")
+        .args(["--user", "start", "kdefusiond"])
+        .status();
+    for _ in 0..20 {
+        if daemon_reachable(api_base) {
+            return;
+        }
+        std::thread::sleep(Duration::from_millis(250));
+    }
+    if daemon_reachable(api_base) {
+        return;
+    }
+    if let Some(binary) = find_daemon_binary() {
+        let _ = Command::new(binary)
+            .stdin(Stdio::null())
+            .stdout(Stdio::null())
+            .stderr(Stdio::null())
+            .spawn();
+        for _ in 0..40 {
+            if daemon_reachable(api_base) {
+                return;
+            }
+            std::thread::sleep(Duration::from_millis(250));
+        }
+    }
+}
+
+fn daemon_reachable(api_base: &str) -> bool {
+    let (host, port) = parse_api_base(api_base);
+    let address = format!("{host}:{port}");
+    if let Ok(mut addresses) = address.to_socket_addrs() {
+        if let Some(socket_address) = addresses.next() {
+            return std::net::TcpStream::connect_timeout(&socket_address, Duration::from_millis(300))
+                .is_ok();
+        }
+    }
+    false
+}
+
+fn parse_api_base(api_base: &str) -> (String, u16) {
+    let mut value = api_base.trim();
+    if let Some(rest) = value.strip_prefix("http://") {
+        value = rest;
+    } else if let Some(rest) = value.strip_prefix("https://") {
+        value = rest;
+    }
+    if let Some(index) = value.find('/') {
+        value = &value[..index];
+    }
+    if let Some((host, port)) = value.rsplit_once(':') {
+        if let Ok(port) = port.parse::<u16>() {
+            return (host.to_string(), port);
+        }
+    }
+    (value.to_string(), 47812)
+}
+
+fn find_daemon_binary() -> Option<PathBuf> {
+    if let Ok(current) = std::env::current_exe() {
+        if let Some(parent) = current.parent() {
+            let candidate = parent.join("kdefusiond");
+            if candidate.is_file() {
+                return Some(candidate);
+            }
+        }
+    }
+    for candidate in ["/usr/bin/kdefusiond", "/usr/local/bin/kdefusiond"] {
+        let path = PathBuf::from(candidate);
+        if path.is_file() {
+            return Some(path);
+        }
+    }
+    if let Some(home) = std::env::var_os("HOME") {
+        let path = PathBuf::from(home).join(".local/bin/kdefusiond");
+        if path.is_file() {
+            return Some(path);
+        }
+    }
+    std::env::var_os("PATH").and_then(|paths| {
+        std::env::split_paths(&paths)
+            .map(|directory| directory.join("kdefusiond"))
+            .find(|path| path.is_file())
+    })
 }
 
 #[cfg(test)]
