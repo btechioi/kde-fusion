@@ -1,3 +1,9 @@
+kde-fusion (0.1.7-1) unstable; urgency=medium
+
+  * Fix GUI session start (missing resolutionField id).
+
+ -- KDE Fusion contributors <kdefusion@example.invalid>  Sat, 07 Nov 2026 00:00:00 +0000
+
 kde-fusion (0.1.6-1) unstable; urgency=medium
 
   * Bundle QML runtime as "kdefusion" for correct taskbar icon.

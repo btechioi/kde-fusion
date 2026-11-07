@@ -3,7 +3,7 @@
 # source tarball in ~/rpmbuild/SOURCES).
 
 Name:           kde-fusion
-Version:        0.1.6
+Version:        0.1.7
 Release:        1%{?dist}
 Summary:        KDE-native desktop mirroring and extending over Sunshine and Moonlight
 
@@ -73,6 +73,9 @@ install -Dm644 systemd/kdefusiond.service %{buildroot}%{_userunitdir}/kdefusiond
 %{_userunitdir}/kdefusiond.service
 
 %changelog
+* Sat Nov 07 2026 KDE Fusion contributors - 0.1.7-1
+- Fix GUI session start (missing resolutionField id).
+
 * Sat Nov 07 2026 KDE Fusion contributors - 0.1.6-1
 - Bundle QML runtime as "kdefusion" for correct taskbar icon.
 
