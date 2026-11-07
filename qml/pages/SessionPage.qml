@@ -301,6 +301,14 @@ Kirigami.Page {
                     onClicked: page.advanced = !page.advanced
                 }
 
+                Controls.TextField {
+                    id: resolutionField
+                    Kirigami.FormData.label: "Resolution:"
+                    Layout.fillWidth: true
+                    visible: page.advanced
+                    placeholderText: "Auto (client native), for example 1920x1080"
+                }
+
                 Controls.SpinBox {
                     id: fpsSpin
                     Kirigami.FormData.label: "FPS:"
