@@ -1,0 +1,50 @@
+[package]
+name = "kdefusion"
+version = "0.1.0"
+edition = "2021"
+rust-version = "1.82"
+description = "KDE-native desktop mirroring and extending over Sunshine + Moonlight"
+license = "GPL-3.0-or-later"
+repository = "https://example.invalid/kde-fusion"
+default-run = "kdefusiond"
+
+[[bin]]
+name = "kdefusiond"
+path = "src/bin/kdefusiond.rs"
+
+[[bin]]
+name = "kdefusionctl"
+path = "src/bin/kdefusionctl.rs"
+
+[[bin]]
+name = "kdefusion"
+path = "src/bin/kdefusion.rs"
+
+[dependencies]
+anyhow = "1.0"
+clap = { version = "4.6", features = ["derive", "env"] }
+dirs = "7.0"
+fastrand = "2.5"
+ksni = "0.3"
+mdns-sd = "0.21"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+tokio = { version = "1.54", features = [
+    "rt",
+    "macros",
+    "net",
+    "process",
+    "io-util",
+    "time",
+    "sync",
+    "signal",
+    "fs",
+] }
+toml = "1.2"
+tracing = "0.1"
+tracing-subscriber = "0.3"
+
+[profile.release]
+lto = "thin"
+codegen-units = 1
+strip = true

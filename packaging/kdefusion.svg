@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 256 256">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#1d2a44"/>
+      <stop offset="1" stop-color="#0f1726"/>
+    </linearGradient>
+    <linearGradient id="screen" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#8ecdf5"/>
+      <stop offset="1" stop-color="#3daee9"/>
+    </linearGradient>
+    <linearGradient id="screen2" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#f6c86e"/>
+      <stop offset="1" stop-color="#f29d38"/>
+    </linearGradient>
+  </defs>
+  <rect x="8" y="8" width="240" height="240" rx="52" fill="url(#bg)"/>
+  <!-- back screen -->
+  <rect x="116" y="52" width="98" height="66" rx="9" fill="url(#screen2)" opacity="0.9"/>
+  <rect x="124" y="60" width="82" height="50" rx="4" fill="#0f1726" opacity="0.35"/>
+  <rect x="150" y="122" width="30" height="7" rx="3.5" fill="#f29d38"/>
+  <!-- front screen -->
+  <rect x="42" y="82" width="112" height="76" rx="10" fill="url(#screen)"/>
+  <rect x="50" y="90" width="96" height="60" rx="5" fill="#0f1726" opacity="0.35"/>
+  <path d="M58 138 L76 118 L92 130 L108 108 L138 138 Z" fill="#d9f0ff" opacity="0.55"/>
+  <rect x="82" y="158" width="32" height="8" rx="4" fill="#3daee9"/>
+  <!-- link arrows -->
+  <path d="M150 150 L176 166 L150 182 Z" fill="#8ecdf5" opacity="0.85"/>
+  <path d="M182 150 L156 166 L182 182 Z" fill="#f6c86e" opacity="0.85"/>
+</svg>

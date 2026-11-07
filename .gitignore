@@ -1,0 +1,13 @@
+# Rust build artifacts
+/target/
+/Cargo.lock.bak
+
+# Local config/state
+/.cargo/
+
+# Editor/OS
+.DS_Store
+*.swp
+
+# Logs
+*.log

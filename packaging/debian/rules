@@ -1,0 +1,20 @@
+#!/usr/bin/make -f
+
+%:
+	dh $@
+
+override_dh_auto_build:
+	cargo build --release --locked --jobs 2
+
+override_dh_auto_install:
+	install -Dm755 target/release/kdefusiond debian/kde-fusion/usr/bin/kdefusiond
+	install -Dm755 target/release/kdefusionctl debian/kde-fusion/usr/bin/kdefusionctl
+	install -Dm755 target/release/kdefusion debian/kde-fusion/usr/bin/kdefusion
+	mkdir -p debian/kde-fusion/usr/share/kdefusion
+	cp -a qml debian/kde-fusion/usr/share/kdefusion/qml
+	install -Dm644 packaging/kdefusion.desktop debian/kde-fusion/usr/share/applications/kdefusion.desktop
+	install -Dm644 packaging/kdefusion.svg debian/kde-fusion/usr/share/icons/hicolor/scalable/apps/kdefusion.svg
+	install -Dm644 systemd/kdefusiond.service debian/kde-fusion/usr/lib/systemd/user/kdefusiond.service
+
+override_dh_auto_clean:
+	cargo clean || true

@@ -1,0 +1,22 @@
+[Unit]
+Description=KDE Fusion desktop streaming daemon
+Documentation=man:kdefusiond(1)
+After=graphical-session.target
+PartOf=graphical-session.target
+Wants=graphical-session.target
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/kdefusiond
+Restart=on-failure
+RestartSec=3
+TimeoutStopSec=30
+KillMode=mixed
+# KWin screencast, KScreen, PipeWire and the Secret Service all live in the
+# graphical session, so this must be a user unit, not a system unit.
+Environment=XDG_CURRENT_DESKTOP=KDE
+Environment=XDG_SESSION_TYPE=wayland
+Slice=session.slice
+
+[Install]
+WantedBy=graphical-session.target

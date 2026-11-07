@@ -1,0 +1,16 @@
+Source: kde-fusion
+Section: utils
+Priority: optional
+Maintainer: KDE Fusion contributors <kdefusion@example.invalid>
+Build-Depends: debhelper-compat (= 13), cargo, rustc
+Standards-Version: 4.7.0
+Homepage: https://example.invalid/kde-fusion
+
+Package: kde-fusion
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends},
+ krfb, kscreen, qml-qt6, qml6-module-org-kde-kirigami,
+ libsecret-tools, libnotify-bin, curl, pipewire-pulse, polkitd
+Description: KDE-native desktop mirroring and extending
+ KDE Fusion mirrors or extends a KDE Plasma Wayland desktop between two
+ machines using Sunshine and Moonlight, with a native Kirigami frontend.

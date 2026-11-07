@@ -1,0 +1,17 @@
+[Desktop Entry]
+Type=Application
+Name=KDE Fusion
+Name[de]=KDE Fusion
+GenericName=Desktop Streaming
+GenericName[de]=Desktop-Streaming
+Comment=Mirror or extend this desktop to another PC
+Comment[de]=Diesen Desktop auf einen anderen PC spiegeln oder erweitern
+Exec=kdefusion
+Icon=kdefusion
+Terminal=false
+Categories=Network;RemoteAccess;KDE;
+Keywords=remote;desktop;stream;sunshine;moonlight;mirror;extend;
+StartupNotify=true
+StartupWMClass=kdefusion
+OnlyShowIn=KDE;
+X-KDE-StartupNotify=true

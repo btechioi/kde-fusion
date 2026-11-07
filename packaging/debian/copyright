@@ -1,0 +1,7 @@
+Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
+Upstream-Name: kde-fusion
+Source: https://example.invalid/kde-fusion
+
+Files: *
+Copyright: 2026 KDE Fusion contributors
+License: GPL-3.0-or-later
