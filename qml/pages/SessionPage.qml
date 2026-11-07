@@ -263,6 +263,18 @@ Kirigami.Page {
                 }
 
                 Controls.Switch {
+                    Kirigami.FormData.label: "Windowed (720p):"
+                    text: checked ? "Moonlight opens in a 1280x720 window" : "Moonlight opens fullscreen"
+                    checked: page.windowed
+                    onToggled: {
+                        page.windowed = checked;
+                        if (checked) {
+                            resolutionField.text = "1280x720";
+                        }
+                    }
+                }
+
+                Controls.Switch {
                     Kirigami.FormData.label: "Audio:"
                     text: page.audio ? "Stream system audio" : "No audio"
                     checked: page.audio
@@ -287,19 +299,6 @@ Kirigami.Page {
                     text: page.advanced ? "Hide advanced options" : "Advanced options"
                     flat: true
                     onClicked: page.advanced = !page.advanced
-                }
-
-                Controls.Switch {
-                    Kirigami.FormData.label: "Windowed (720p):"
-                    text: checked ? "Moonlight opens in a 1280x720 window" : "Moonlight opens fullscreen"
-                    checked: page.windowed
-                    onToggled: {
-                        page.windowed = checked;
-                        if (checked) {
-                            resolutionField.text = "1280x720";
-                        }
-                    }
-                    visible: page.advanced
                 }
 
                 Controls.SpinBox {
