@@ -3,7 +3,7 @@
 # source tarball in ~/rpmbuild/SOURCES).
 
 Name:           kde-fusion
-Version:        0.1.4
+Version:        0.1.5
 Release:        1%{?dist}
 Summary:        KDE-native desktop mirroring and extending over Sunshine and Moonlight
 
@@ -64,6 +64,9 @@ install -Dm644 systemd/kdefusiond.service %{buildroot}%{_userunitdir}/kdefusiond
 %{_userunitdir}/kdefusiond.service
 
 %changelog
+* Sat Nov 07 2026 KDE Fusion contributors - 0.1.5-1
+- Make windowed 720p switch always visible.
+
 * Sat Nov 07 2026 KDE Fusion contributors - 0.1.4-1
 - Fix taskbar icon by setting Qt application name.
 
