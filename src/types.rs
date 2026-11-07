@@ -115,6 +115,8 @@ pub struct SessionRequest {
     pub peer_id: String,
     pub mode: SessionMode,
     pub layout: Layout,
+    /// `None` means fullscreen (default).
+    pub display_mode: Option<String>,
     /// `None` means use the mode default from config.
     pub audio: Option<bool>,
     /// Optional override such as `1920x1080`.
@@ -131,6 +133,7 @@ impl Default for SessionRequest {
             peer_id: String::new(),
             mode: SessionMode::Mirror,
             layout: Layout::Right,
+            display_mode: None,
             audio: None,
             resolution: String::new(),
             fps: None,
@@ -147,6 +150,7 @@ pub struct StartStream {
     pub session_id: String,
     pub mode: SessionMode,
     pub layout: Layout,
+    pub display_mode: String,
     pub width: u32,
     pub height: u32,
     pub fps: u32,

@@ -896,6 +896,7 @@ mod tests {
                     session_id: "s".into(),
                     mode: crate::types::SessionMode::Mirror,
                     layout: crate::types::Layout::Right,
+                    display_mode: "fullscreen".into(),
                     width: 1920,
                     height: 1080,
                     fps: 60,

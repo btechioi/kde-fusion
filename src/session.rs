@@ -295,22 +295,44 @@ impl SessionManager {
         self.check_stop()?;
 
         // Work out the virtual output geometry.
+        let display_mode = session
+            .request
+            .display_mode
+            .clone()
+            .unwrap_or_else(|| "fullscreen".to_string());
+        let forced_res = if display_mode == "windowed" {
+            parse_resolution(&session.request.resolution)
+                .or_else(|| parse_resolution(&config.streaming.resolution))
+                .or(Some((1280, 720)))
+        } else {
+            None
+        };
         let (logical_w, logical_h, scale) = match session.request.mode {
-            SessionMode::Mirror => (
-                physical.logical_width,
-                physical.logical_height,
-                physical.scale,
-            ),
-            SessionMode::Extend | SessionMode::Headless => {
-                let (w, h) = self
-                    .client_resolution(
-                        &session.peer_addr,
-                        &session.token,
-                        &session.request,
-                        &physical,
+            SessionMode::Mirror => {
+                if let Some((w, h)) = forced_res {
+                    (w, h, 1.0)
+                } else {
+                    (
+                        physical.logical_width,
+                        physical.logical_height,
+                        physical.scale,
                     )
-                    .await;
-                (w, h, 1.0)
+                }
+            }
+            SessionMode::Extend | SessionMode::Headless => {
+                if let Some((w, h)) = forced_res {
+                    (w, h, 1.0)
+                } else {
+                    let (w, h) = self
+                        .client_resolution(
+                            &session.peer_addr,
+                            &session.token,
+                            &session.request,
+                            &physical,
+                        )
+                        .await;
+                    (w, h, 1.0)
+                }
             }
         };
         let virtual_name = config.display.virtual_name.clone();
@@ -500,6 +522,11 @@ impl SessionManager {
             session_id: session.session_id.clone(),
             mode: session.request.mode,
             layout: session.request.layout,
+            display_mode: session
+                .request
+                .display_mode
+                .clone()
+                .unwrap_or_else(|| "fullscreen".to_string()),
             width: session.stream_pixel.0.max(1),
             height: session.stream_pixel.1.max(1),
             fps,
@@ -753,7 +780,7 @@ impl SessionManager {
             bitrate_kbps: start.bitrate_kbps,
             codec: start.codec.clone(),
             audio: start.audio,
-            display_mode: "fullscreen".to_string(),
+            display_mode: start.display_mode.clone(),
             absolute_mouse: config.streaming.absolute_mouse,
             capture_system_keys: config.streaming.capture_system_keys.clone(),
             keep_awake: config.streaming.keep_awake,

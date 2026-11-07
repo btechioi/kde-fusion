@@ -13,6 +13,7 @@ Kirigami.Page {
     property string preselectMode: "mirror"
 
     property string mode: "mirror"
+    property bool windowed: false
     property bool audio: true
     property bool audioTouched: false
     property bool advanced: false
@@ -62,6 +63,7 @@ Kirigami.Page {
         var request = {
             peer_id: peer.device_id,
             mode: page.mode,
+            display_mode: page.windowed ? "windowed" : "fullscreen",
             layout: layoutCombo.currentIndex === 0 ? "right"
                 : layoutCombo.currentIndex === 1 ? "left"
                 : layoutCombo.currentIndex === 2 ? "top" : "bottom",
@@ -287,12 +289,17 @@ Kirigami.Page {
                     onClicked: page.advanced = !page.advanced
                 }
 
-                Controls.TextField {
-                    id: resolutionField
-                    Kirigami.FormData.label: "Resolution:"
-                    Layout.fillWidth: true
+                Controls.Switch {
+                    Kirigami.FormData.label: "Windowed (720p):"
+                    text: checked ? "Moonlight opens in a 1280x720 window" : "Moonlight opens fullscreen"
+                    checked: page.windowed
+                    onToggled: {
+                        page.windowed = checked;
+                        if (checked) {
+                            resolutionField.text = "1280x720";
+                        }
+                    }
                     visible: page.advanced
-                    placeholderText: "Auto (client native), for example 1920x1080"
                 }
 
                 Controls.SpinBox {

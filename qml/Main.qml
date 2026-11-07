@@ -15,6 +15,7 @@ Kirigami.ApplicationWindow {
     minimumWidth: 760
     minimumHeight: 560
     title: "KDE Fusion"
+    desktopFileName: "kdefusion"
 
     property string currentPage: "devices"
     property bool smokeTest: Qt.application.arguments.indexOf("--smoke-test") >= 0
