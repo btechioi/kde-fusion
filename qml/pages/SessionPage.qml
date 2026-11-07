@@ -13,7 +13,7 @@ Kirigami.Page {
     property string preselectMode: "mirror"
 
     property string mode: "mirror"
-    property bool windowed: false
+    property string displayMode: "fullscreen"
     property bool audio: true
     property bool audioTouched: false
     property bool advanced: false
@@ -63,7 +63,7 @@ Kirigami.Page {
         var request = {
             peer_id: peer.device_id,
             mode: page.mode,
-            display_mode: page.windowed ? "windowed" : "fullscreen",
+            display_mode: page.displayMode === "fullscreen" ? "fullscreen" : "windowed",
             layout: layoutCombo.currentIndex === 0 ? "right"
                 : layoutCombo.currentIndex === 1 ? "left"
                 : layoutCombo.currentIndex === 2 ? "top" : "bottom",
@@ -262,14 +262,21 @@ Kirigami.Page {
                     model: ["Right of this screen", "Left of this screen", "Above this screen", "Below this screen"]
                 }
 
-                Controls.Switch {
-                    Kirigami.FormData.label: "Windowed (720p):"
-                    text: checked ? "Moonlight opens in a 1280x720 window" : "Moonlight opens fullscreen"
-                    checked: page.windowed
-                    onToggled: {
-                        page.windowed = checked;
-                        if (checked) {
+                Controls.ComboBox {
+                    id: displayModeCombo
+                    Kirigami.FormData.label: "Display:"
+                    Layout.fillWidth: true
+                    model: ["Fullscreen", "Windowed 720p", "Windowed (unscaled)"]
+                    currentIndex: page.displayMode === "fullscreen" ? 0 : page.displayMode === "windowed-720p" ? 1 : 2
+                    onActivated: {
+                        if (index === 0) {
+                            page.displayMode = "fullscreen";
+                        } else if (index === 1) {
+                            page.displayMode = "windowed-720p";
                             resolutionField.text = "1280x720";
+                        } else {
+                            page.displayMode = "windowed-unscaled";
+                            resolutionField.text = "";
                         }
                     }
                 }

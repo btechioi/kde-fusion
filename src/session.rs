@@ -303,7 +303,6 @@ impl SessionManager {
         let forced_res = if display_mode == "windowed" {
             parse_resolution(&session.request.resolution)
                 .or_else(|| parse_resolution(&config.streaming.resolution))
-                .or(Some((1280, 720)))
         } else {
             None
         };
