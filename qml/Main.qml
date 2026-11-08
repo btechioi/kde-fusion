@@ -142,16 +142,6 @@ Kirigami.ApplicationWindow {
                 checkable: true
                 checked: root.currentPage === "diagnostics"
                 onTriggered: root.navigate("diagnostics")
-            },
-            Kirigami.Action {
-                text: "About"
-                icon.name: "help-about"
-                onTriggered: aboutDialog.open()
-            },
-            Kirigami.Action {
-                text: "Quit"
-                icon.name: "application-exit"
-                onTriggered: root.quitApp()
             }
         ]
     }
@@ -188,6 +178,13 @@ Kirigami.ApplicationWindow {
             }
 
             Item { Layout.fillWidth: true }
+
+            Controls.ToolButton {
+                text: "About"
+                icon.name: "help-about"
+                flat: true
+                onClicked: aboutDialog.open()
+            }
 
             Controls.Label {
                 text: backend.deviceName

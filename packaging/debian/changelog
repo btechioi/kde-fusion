@@ -1,3 +1,15 @@
+kde-fusion (0.1.10-1) unstable; urgency=medium
+
+  * Consolidate sidebar: remove About/Quit tabs, add About to footer.
+
+ -- KDE Fusion contributors <kdefusion@example.invalid>  Sat, 07 Nov 2026 00:00:00 +0000
+
+kde-fusion (0.1.9-1) unstable; urgency=medium
+
+  * UI polish: placeholder messages for empty states.
+
+ -- KDE Fusion contributors <kdefusion@example.invalid>  Sat, 07 Nov 2026 00:00:00 +0000
+
 kde-fusion (0.1.8-1) unstable; urgency=medium
 
   * Add unscaled windowed mode (native resolution).
