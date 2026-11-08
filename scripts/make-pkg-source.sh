@@ -11,7 +11,7 @@ trap 'rm -rf "$TMP"' EXIT
 
 mkdir -p "$TMP/$NAME"
 cd "$ROOT"
-for entry in Cargo.toml Cargo.lock LICENSE README.md src qml packaging docs systemd scripts; do
+for entry in Cargo.toml Cargo.lock LICENSE README.md src qml packaging docs systemd scripts plasmoid; do
   [[ -e "$entry" ]] || continue
   cp -a "$entry" "$TMP/$NAME/"
 done
