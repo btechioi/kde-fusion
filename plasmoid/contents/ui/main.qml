@@ -96,7 +96,7 @@ PlasmoidItem {
         onTriggered: root.refresh()
     }
 
-    Plasmoid.fullRepresentation: PlasmaExtras.Representation {
+    fullRepresentation: PlasmaExtras.Representation {
         header: PlasmaExtras.PlasmoidHeading {
             RowLayout {
                 anchors.fill: parent
