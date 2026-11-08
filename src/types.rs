@@ -151,6 +151,7 @@ pub struct StartStream {
     pub mode: SessionMode,
     pub layout: Layout,
     pub display_mode: String,
+    pub host_device_id: String,
     pub width: u32,
     pub height: u32,
     pub fps: u32,

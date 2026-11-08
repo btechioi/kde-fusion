@@ -100,6 +100,9 @@ pub enum Message {
         session_id: String,
         reason: String,
     },
+    ClipboardUpdate {
+        text: String,
+    },
     Status,
     StatusResult {
         status: SessionStatus,
@@ -499,6 +502,14 @@ impl ControlContext {
                     Err(err) => Message::error("stop_failed", format!("{err:#}")),
                 }
             }
+            Message::ClipboardUpdate { text } => {
+                if let Err(err) = self.require_auth(&envelope.token) {
+                    return err;
+                }
+                crate::clipboard::set(&text).await;
+                crate::clipboard::LAST_CLIPBOARD.lock().unwrap().clone_from(&text);
+                Message::Pong
+            }
             Message::Status => {
                 if let Err(err) = self.require_auth(&envelope.token) {
                     return err;
@@ -802,6 +813,19 @@ pub async fn stop_session(
     }
 }
 
+pub async fn send_clipboard(addr: SocketAddr, token: &str, text: &str) -> Result<()> {
+    let mut client = ControlClient::connect(addr).await?;
+    let _ = client
+        .request(
+            Some(token),
+            Message::ClipboardUpdate {
+                text: text.to_string(),
+            },
+        )
+        .await?;
+    Ok(())
+}
+
 pub async fn pair_sunshine(
     addr: SocketAddr,
     token: &str,
@@ -897,6 +921,7 @@ mod tests {
                     mode: crate::types::SessionMode::Mirror,
                     layout: crate::types::Layout::Right,
                     display_mode: "fullscreen".into(),
+                    host_device_id: "host".into(),
                     width: 1920,
                     height: 1080,
                     fps: 60,

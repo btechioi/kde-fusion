@@ -526,6 +526,7 @@ impl SessionManager {
                 .display_mode
                 .clone()
                 .unwrap_or_else(|| "fullscreen".to_string()),
+            host_device_id: config.device.id.clone(),
             width: session.stream_pixel.0.max(1),
             height: session.stream_pixel.1.max(1),
             fps,
@@ -553,6 +554,24 @@ impl SessionManager {
                 viewer_status.phase_name()
             );
         }
+
+        // Bidirectional clipboard sync.
+        let peer_addr = session.peer_addr;
+        let token = session.token.clone();
+        tokio::spawn(async move {
+            let mut last = crate::clipboard::take_last();
+            loop {
+                tokio::time::sleep(Duration::from_millis(750)).await;
+                if let Some(text) = crate::clipboard::get().await {
+                    if text != last && !text.is_empty() {
+                        last = text.clone();
+                        crate::clipboard::set_last(text.clone());
+                        let _ = control::send_clipboard(peer_addr, &token, &text).await;
+                    }
+                }
+            }
+        });
+
         Ok(())
     }
 
@@ -792,6 +811,28 @@ impl SessionManager {
                 return Err(err);
             }
         };
+        // Bidirectional clipboard sync (viewer -> host).
+        let host_addr = host_addr;
+        let host_device_id = start.host_device_id.clone();
+        let secrets = self.secrets.clone();
+        tokio::spawn(async move {
+            let token = match secrets.peer_token(&host_device_id) {
+                Some(t) => t,
+                None => return,
+            };
+            let mut last = crate::clipboard::take_last();
+            loop {
+                tokio::time::sleep(Duration::from_millis(750)).await;
+                if let Some(text) = crate::clipboard::get().await {
+                    if text != last && !text.is_empty() {
+                        last = text.clone();
+                        crate::clipboard::set_last(text.clone());
+                        let addr = std::net::SocketAddr::new(host_addr, 47811);
+                        let _ = control::send_clipboard(addr, &token, &text).await;
+                    }
+                }
+            }
+        });
         let viewer = ViewerSession {
             session_id: start.session_id.clone(),
             host_name: start.host_name.clone(),
