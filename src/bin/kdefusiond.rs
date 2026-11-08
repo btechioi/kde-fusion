@@ -156,6 +156,7 @@ async fn run() -> Result<()> {
     let _tray_tx = tray_tx;
     if let Some(handle) = tray_handle.clone() {
         let session = session.clone();
+        let state = state.clone();
         tokio::spawn(async move {
             let mut last: Option<(bool, String)> = None;
             loop {
@@ -172,15 +173,26 @@ async fn run() -> Result<()> {
                     String::new()
                 };
                 let next = (active, detail.clone());
+                let peers: Vec<(String, String)> = state
+                    .peers()
+                    .iter()
+                    .map(|p| (p.device_id.clone(), p.name.clone()))
+                    .collect();
                 if last.as_ref() != Some(&next) {
                     last = Some(next);
                     if handle
-                        .update(|tray| tray.set_status(active, detail))
+                        .update(|tray| {
+                            tray.set_status(active, detail);
+                            tray.set_peers(peers);
+                        })
                         .await
                         .is_none()
                     {
                         break;
                     }
+                } else {
+                    // Still refresh peers (names may change) cheaply.
+                    let _ = handle.update(|tray| tray.set_peers(peers)).await;
                 }
                 tokio::time::sleep(Duration::from_secs(2)).await;
             }
@@ -272,6 +284,33 @@ async fn run() -> Result<()> {
                             {
                                 notify::send("KDE Fusion", format!("No session to stop: {err}"))
                                     .await;
+                            }
+                        }
+                        Some(TrayCommand::StartSession { peer_id, mode }) => {
+                            use kdefusion::types::{Layout, SessionMode, SessionRequest};
+                            let mode = match mode {
+                                "extend" => SessionMode::Extend,
+                                "headless" => SessionMode::Headless,
+                                _ => SessionMode::Mirror,
+                            };
+                            let request = SessionRequest {
+                                peer_id,
+                                mode,
+                                layout: Layout::Right,
+                                display_mode: None,
+                                audio: None,
+                                resolution: String::new(),
+                                fps: None,
+                                bitrate_kbps: None,
+                                codec: None,
+                                app: None,
+                            };
+                            if let Err(err) = session.request_start(request).await {
+                                notify::send(
+                                    "KDE Fusion",
+                                    format!("Could not start session: {err}"),
+                                )
+                                .await;
                             }
                         }
                         Some(TrayCommand::Quit) => break 'wait "tray quit",

@@ -9,6 +9,7 @@ use std::path::PathBuf;
 use std::process::{Command, Stdio};
 
 use ksni::menu::StandardItem;
+use ksni::menu::SubMenu;
 use ksni::{MenuItem, Tray, TrayMethods};
 use tokio::sync::mpsc::UnboundedSender;
 
@@ -43,11 +44,12 @@ impl Page {
 }
 
 /// Actions requested from the tray menu.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum TrayCommand {
     Open(Option<Page>),
     StopSession,
     Quit,
+    StartSession { peer_id: String, mode: &'static str },
 }
 
 pub struct KdeFusionTray {
@@ -55,6 +57,7 @@ pub struct KdeFusionTray {
     device_name: String,
     active: bool,
     detail: String,
+    peers: Vec<(String, String)>,
 }
 
 impl KdeFusionTray {
@@ -66,6 +69,10 @@ impl KdeFusionTray {
     pub fn set_status(&mut self, active: bool, detail: String) {
         self.active = active;
         self.detail = detail;
+    }
+
+    pub fn set_peers(&mut self, peers: Vec<(String, String)>) {
+        self.peers = peers;
     }
 }
 
@@ -116,7 +123,76 @@ impl Tray for KdeFusionTray {
     }
 
     fn menu(&self) -> Vec<MenuItem<Self>> {
-        vec![
+        let mut items: Vec<MenuItem<Self>> = Vec::new();
+
+        // Status header.
+        if self.active {
+            items.push(
+                StandardItem {
+                    label: format!("Streaming: {}", self.detail),
+                    icon_name: "media-playback-start".into(),
+                    enabled: false,
+                    ..Default::default()
+                }
+                .into(),
+            );
+            items.push(MenuItem::Separator);
+        }
+
+        // Quick start submenu for paired peers.
+        if !self.peers.is_empty() {
+            let mut peer_items: Vec<MenuItem<Self>> = Vec::new();
+            for (id, name) in &self.peers {
+                let id_mirror = id.clone();
+                let id_extend = id.clone();
+                peer_items.push(
+                    SubMenu {
+                        label: name.clone(),
+                        icon_name: "computer".into(),
+                        submenu: vec![
+                            StandardItem {
+                                label: "Mirror".into(),
+                                icon_name: "view-duplicate".into(),
+                                activate: Box::new(move |tray: &mut Self| {
+                                    tray.emit(TrayCommand::StartSession {
+                                        peer_id: id_mirror.clone(),
+                                        mode: "mirror",
+                                    })
+                                }),
+                                ..Default::default()
+                            }
+                            .into(),
+                            StandardItem {
+                                label: "Extend".into(),
+                                icon_name: "view-split-left-right".into(),
+                                activate: Box::new(move |tray: &mut Self| {
+                                    tray.emit(TrayCommand::StartSession {
+                                        peer_id: id_extend.clone(),
+                                        mode: "extend",
+                                    })
+                                }),
+                                ..Default::default()
+                            }
+                            .into(),
+                        ],
+                        ..Default::default()
+                    }
+                    .into(),
+                );
+            }
+            items.push(
+                SubMenu {
+                    label: "Start session".into(),
+                    icon_name: "media-playback-start".into(),
+                    submenu: peer_items,
+                    ..Default::default()
+                }
+                .into(),
+            );
+            items.push(MenuItem::Separator);
+        }
+
+        items.push(
             StandardItem {
                 label: "Open KDE Fusion".into(),
                 icon_name: "window-new".into(),
@@ -124,6 +200,8 @@ impl Tray for KdeFusionTray {
                 ..Default::default()
             }
             .into(),
+        );
+        items.push(
             StandardItem {
                 label: "Devices".into(),
                 icon_name: "network-wired".into(),
@@ -133,6 +211,19 @@ impl Tray for KdeFusionTray {
                 ..Default::default()
             }
             .into(),
+        );
+        items.push(
+            StandardItem {
+                label: "Pair new device".into(),
+                icon_name: "list-add".into(),
+                activate: Box::new(|tray: &mut Self| {
+                    tray.emit(TrayCommand::Open(Some(Page::Devices)))
+                }),
+                ..Default::default()
+            }
+            .into(),
+        );
+        items.push(
             StandardItem {
                 label: "Session".into(),
                 icon_name: "media-playback-start".into(),
@@ -142,6 +233,8 @@ impl Tray for KdeFusionTray {
                 ..Default::default()
             }
             .into(),
+        );
+        items.push(
             StandardItem {
                 label: "Settings".into(),
                 icon_name: "settings-configure".into(),
@@ -151,6 +244,8 @@ impl Tray for KdeFusionTray {
                 ..Default::default()
             }
             .into(),
+        );
+        items.push(
             StandardItem {
                 label: "Diagnostics".into(),
                 icon_name: "utilities-system-monitor".into(),
@@ -160,7 +255,9 @@ impl Tray for KdeFusionTray {
                 ..Default::default()
             }
             .into(),
-            MenuItem::Separator,
+        );
+        items.push(MenuItem::Separator);
+        items.push(
             StandardItem {
                 label: "Stop session".into(),
                 icon_name: "media-playback-stop".into(),
@@ -169,7 +266,9 @@ impl Tray for KdeFusionTray {
                 ..Default::default()
             }
             .into(),
-            MenuItem::Separator,
+        );
+        items.push(MenuItem::Separator);
+        items.push(
             StandardItem {
                 label: "Quit KDE Fusion".into(),
                 icon_name: "application-exit".into(),
@@ -177,7 +276,8 @@ impl Tray for KdeFusionTray {
                 ..Default::default()
             }
             .into(),
-        ]
+        );
+        items
     }
 }
 
@@ -192,6 +292,7 @@ pub async fn spawn(
         device_name,
         active: false,
         detail: String::new(),
+        peers: Vec::new(),
     };
     match tray.spawn().await {
         Ok(handle) => {
