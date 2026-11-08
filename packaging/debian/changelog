@@ -1,3 +1,9 @@
+kde-fusion (0.1.21-1) unstable; urgency=medium
+
+  * Hardware-accelerate Moonlight; prefer H.264 when viewer lacks HEVC decode.
+
+ -- KDE Fusion contributors <kdefusion@example.invalid>  Sat, 07 Nov 2026 00:00:00 +0000
+
 kde-fusion (0.1.20-1) unstable; urgency=medium
 
   * Plasmoid: mode/audio/display toggles, peer quick-start.

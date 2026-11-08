@@ -3,7 +3,7 @@
 # source tarball in ~/rpmbuild/SOURCES).
 
 Name:           kde-fusion
-Version:        0.1.20
+Version:        0.1.21
 Release:        1%{?dist}
 Summary:        KDE-native desktop mirroring and extending over Sunshine and Moonlight
 
@@ -80,6 +80,9 @@ install -Dm644 systemd/kdefusiond.service %{buildroot}%{_userunitdir}/kdefusiond
 %{_userunitdir}/kdefusiond.service
 
 %changelog
+* Sat Nov 07 2026 KDE Fusion contributors - 0.1.21-1
+- Hardware-accelerate Moonlight; prefer H.264 when viewer lacks HEVC decode.
+
 * Sat Nov 07 2026 KDE Fusion contributors - 0.1.20-1
 - Plasmoid: mode/audio/display toggles, peer quick-start.
 
