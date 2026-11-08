@@ -72,6 +72,7 @@ install -Dm644 systemd/kdefusiond.service %{buildroot}%{_userunitdir}/kdefusiond
 %{_bindir}/kdefusionctl
 %{_bindir}/kdefusion
 %{_libdir}/kdefusion/
+%{_datadir}/kdefusion/
 %{_datadir}/plasma/plasmoids/org.kde.plasma.kdefusion/
 %{_datadir}/applications/kdefusion.desktop
 %{_datadir}/icons/hicolor/scalable/apps/kdefusion.svg
