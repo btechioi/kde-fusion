@@ -159,8 +159,8 @@ Kirigami.ApplicationWindow {
             spacing: Kirigami.Units.smallSpacing
 
             Rectangle {
-                width: Kirigami.Units.smallSpacing
-                height: Kirigami.Units.smallSpacing
+                width: Kirigami.Units.smallSpacing * 2
+                height: Kirigami.Units.smallSpacing * 2
                 radius: width / 2
                 color: backend.connected
                     ? Kirigami.Theme.positiveTextColor
