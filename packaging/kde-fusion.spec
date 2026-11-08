@@ -3,7 +3,7 @@
 # source tarball in ~/rpmbuild/SOURCES).
 
 Name:           kde-fusion
-Version:        0.1.10
+Version:        0.1.11
 Release:        1%{?dist}
 Summary:        KDE-native desktop mirroring and extending over Sunshine and Moonlight
 
@@ -75,6 +75,9 @@ install -Dm644 systemd/kdefusiond.service %{buildroot}%{_userunitdir}/kdefusiond
 %{_userunitdir}/kdefusiond.service
 
 %changelog
+* Sat Nov 07 2026 KDE Fusion contributors - 0.1.11-1
+- Tray: KDE Connect-like menu with quick start per peer.
+
 * Sat Nov 07 2026 KDE Fusion contributors - 0.1.10-1
 - Consolidate sidebar: remove About/Quit tabs, add About to footer.
 
