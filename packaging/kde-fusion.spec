@@ -3,7 +3,7 @@
 # source tarball in ~/rpmbuild/SOURCES).
 
 Name:           kde-fusion
-Version:        0.1.17
+Version:        0.1.18
 Release:        1%{?dist}
 Summary:        KDE-native desktop mirroring and extending over Sunshine and Moonlight
 
@@ -80,6 +80,9 @@ install -Dm644 systemd/kdefusiond.service %{buildroot}%{_userunitdir}/kdefusiond
 %{_userunitdir}/kdefusiond.service
 
 %changelog
+* Sat Nov 07 2026 KDE Fusion contributors - 0.1.18-1
+- Fix plasmoid: use PlasmoidHeading (Header type missing).
+
 * Sat Nov 07 2026 KDE Fusion contributors - 0.1.17-1
 - Install Plasma widget by default; disable tray by default.
 
