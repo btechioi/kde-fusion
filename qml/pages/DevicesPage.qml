@@ -168,14 +168,60 @@ Kirigami.Page {
             Kirigami.Heading {
                 level: 3
                 text: "Your PCs"
+                visible: (page.backend.pairedPeers || []).length > 0
             }
 
-            Kirigami.PlaceholderMessage {
+            // Empty state (KDE Connect style)
+            ColumnLayout {
                 Layout.fillWidth: true
                 visible: (page.backend.pairedPeers || []).length === 0
-                text: "No paired PCs yet"
-                explanation: "Turn on KDE Fusion on the other PC. It will appear here automatically over mDNS."
-                icon.name: "network-wired"
+                spacing: Kirigami.Units.largeSpacing
+
+                Kirigami.Icon {
+                    Layout.alignment: Qt.AlignHCenter
+                    source: "dialog-cancel"
+                    implicitWidth: Kirigami.Units.iconSizes.huge
+                    implicitHeight: Kirigami.Units.iconSizes.huge
+                }
+
+                Controls.Label {
+                    Layout.fillWidth: true
+                    horizontalAlignment: Text.AlignHCenter
+                    text: "No paired devices"
+                    font.bold: true
+                    font.pointSize: Kirigami.Theme.defaultFont.pointSize * 1.3
+                }
+
+                Controls.Button {
+                    Layout.alignment: Qt.AlignHCenter
+                    text: "+ Pair a Device..."
+                    icon.name: "list-add"
+                    onClicked: {
+                        page.backend.refreshAll();
+                        applicationWindow().showPassiveNotification(
+                            "Make sure KDE Fusion is running on the other PC. It will appear in “Nearby”.",
+                            "short");
+                    }
+                }
+
+                ColumnLayout {
+                    Layout.fillWidth: true
+                    spacing: Kirigami.Units.smallSpacing
+
+                    Controls.Button {
+                        Layout.fillWidth: true
+                        text: "Install from GitHub"
+                        icon.name: "get-hot-new-stuff"
+                        onClicked: Qt.openUrlExternally("https://github.com/btechioi/kde-fusion/releases")
+                    }
+
+                    Controls.Button {
+                        Layout.fillWidth: true
+                        text: "Read the setup guide"
+                        icon.name: "help-contents"
+                        onClicked: Qt.openUrlExternally("https://github.com/btechioi/kde-fusion/blob/main/docs/SETUP.md")
+                    }
+                }
             }
 
             Repeater {
