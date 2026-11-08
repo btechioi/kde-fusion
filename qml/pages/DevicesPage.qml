@@ -170,12 +170,12 @@ Kirigami.Page {
                 text: "Your PCs"
             }
 
-            Controls.Label {
-                visible: (page.backend.pairedPeers || []).length === 0
-                text: "No paired PCs yet. Turn on KDE Fusion on the other PC; it will appear below over mDNS."
-                color: Kirigami.Theme.disabledTextColor
-                wrapMode: Text.WordWrap
+            Kirigami.PlaceholderMessage {
                 Layout.fillWidth: true
+                visible: (page.backend.pairedPeers || []).length === 0
+                text: "No paired PCs yet"
+                explanation: "Turn on KDE Fusion on the other PC. It will appear here automatically over mDNS."
+                icon.name: "network-wired"
             }
 
             Repeater {
