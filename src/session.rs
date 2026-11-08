@@ -511,7 +511,19 @@ impl SessionManager {
         self.check_stop()?;
 
         let support = sunshine::detect_encoder_support().await;
-        let codec = sunshine::select_codec(&config.streaming.codec, &support);
+        let mut requested_codec = config.streaming.codec.clone();
+        // Prefer H.264 when the viewer cannot hardware-decode HEVC, so both
+        // sides stay hardware-accelerated.
+        if let Ok(info) = control::viewer_info(session.peer_addr, &session.token).await {
+            if let control::Message::InfoResult { hevc_decode, .. } = info {
+                if !hevc_decode
+                    && (requested_codec == "auto" || requested_codec == "HEVC")
+                {
+                    requested_codec = "H.264".to_string();
+                }
+            }
+        }
+        let codec = sunshine::select_codec(&requested_codec, &support);
         let fps = session.request.fps.unwrap_or(config.streaming.fps);
         let bitrate = session
             .request

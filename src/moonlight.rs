@@ -146,6 +146,8 @@ impl MoonlightSpec {
             self.app.clone(),
             "--display-mode".to_string(),
             self.display_mode.clone(),
+            "--video-decoder".to_string(),
+            "hardware".to_string(),
             "--resolution".to_string(),
             format!("{}x{}", self.width, self.height),
             "--fps".to_string(),

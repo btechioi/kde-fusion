@@ -643,6 +643,33 @@ pub async fn detect_encoder_support() -> EncoderSupport {
     support
 }
 
+pub async fn detect_decode_support() -> EncoderSupport {
+    // Reuse EncoderSupport struct fields h264/hevc for decode capability.
+    if !crate::util::command_exists("vainfo") {
+        return EncoderSupport::default();
+    }
+    let out = match run("vainfo", &[]).await {
+        Ok(out) => out,
+        Err(_) => return EncoderSupport::default(),
+    };
+    let text = format!("{}\n{}", out.stdout, out.stderr);
+    let mut support = EncoderSupport::default();
+    let mut profile = String::new();
+    for line in text.lines() {
+        if let Some(idx) = line.find("VAProfile") {
+            profile = line[idx..].to_string();
+        }
+        if line.contains("VAEntrypointVLD") {
+            if profile.contains("H264") {
+                support.h264 = true;
+            }
+            if profile.contains("HEVC") {
+                support.hevc = true;
+            }
+        }
+    }
+    support
+}
 pub fn select_codec(requested: &str, support: &EncoderSupport) -> String {
     match requested {
         "HEVC" if support.hevc => "HEVC".to_string(),

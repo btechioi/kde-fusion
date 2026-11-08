@@ -92,6 +92,8 @@ pub enum Message {
         height: u32,
         scale: f64,
         platform: String,
+        hevc_decode: bool,
+        h264_decode: bool,
     },
     StartSession {
         session: StartStream,
@@ -474,6 +476,8 @@ impl ControlContext {
                     height,
                     scale,
                     platform: std::env::consts::OS.to_string(),
+                    hevc_decode: crate::sunshine::detect_decode_support().await.hevc,
+                    h264_decode: crate::sunshine::detect_decode_support().await.h264,
                 }
             }
             Message::StartSession { session } => {
