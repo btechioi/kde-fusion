@@ -97,7 +97,7 @@ PlasmoidItem {
     }
 
     Plasmoid.fullRepresentation: PlasmaExtras.Representation {
-        header: PlasmaExtras.Header {
+        header: PlasmaExtras.PlasmoidHeading {
             RowLayout {
                 anchors.fill: parent
                 PlasmaComponents3.ToolButton {
