@@ -1,3 +1,9 @@
+kde-fusion (0.1.17-1) unstable; urgency=medium
+
+  * Install Plasma widget by default; disable tray by default.
+
+ -- KDE Fusion contributors <kdefusion@example.invalid>  Sat, 07 Nov 2026 00:00:00 +0000
+
 kde-fusion (0.1.16-1) unstable; urgency=medium
 
   * Add Plasma widget (plasmoid) skeleton.

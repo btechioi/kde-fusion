@@ -16,6 +16,8 @@ override_dh_auto_install:
 	elif command -v qml >/dev/null 2>&1; then \
 	  install -Dm755 "$$(command -v qml)" debian/kde-fusion/usr/lib/kdefusion/kdefusion; \
 	fi
+	install -d debian/kde-fusion/usr/share/plasma/plasmoids/org.kde.plasma.kdefusion
+	cp -a plasmoid/. debian/kde-fusion/usr/share/plasma/plasmoids/org.kde.plasma.kdefusion/
 	mkdir -p debian/kde-fusion/usr/share/kdefusion
 	cp -a qml debian/kde-fusion/usr/share/kdefusion/qml
 	install -Dm644 packaging/kdefusion.desktop debian/kde-fusion/usr/share/applications/kdefusion.desktop

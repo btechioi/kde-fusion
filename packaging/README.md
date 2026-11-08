@@ -12,7 +12,7 @@ makepkg -si
 
 ```bash
 ./scripts/make-pkg-source.sh
-rpmbuild -tb kde-fusion-0.1.16.tar.gz
+rpmbuild -tb kde-fusion-0.1.17.tar.gz
 sudo dnf install ~/rpmbuild/RPMS/x86_64/kde-fusion-0.1.0-1.*.rpm
 ```
 

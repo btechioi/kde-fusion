@@ -119,6 +119,7 @@ pub struct PairingConfig {
 pub struct UiConfig {
     pub close_to_tray: bool,
     pub start_minimized: bool,
+    pub tray_enabled: bool,
 }
 
 impl Default for Config {
@@ -233,6 +234,7 @@ impl Default for UiConfig {
         Self {
             close_to_tray: true,
             start_minimized: false,
+            tray_enabled: false,
         }
     }
 }

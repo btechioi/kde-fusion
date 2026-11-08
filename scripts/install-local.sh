@@ -27,6 +27,15 @@ cargo build --release --locked --jobs "${CARGO_BUILD_JOBS:-2}"
 
 echo "==> Installing to $PREFIX"
 install -d "$BINDIR" "$DATADIR/kdefusion" "$ICONDIR" "$APPLICATIONSDIR" "$UNITDIR"
+
+# Install the Plasma widget (plasmoid) so it is available in the widget explorer.
+PLASMOID_SRC="$ROOT/plasmoid"
+if [[ -d "$PLASMOID_SRC" ]]; then
+  PLASMOID_DIR="${XDG_DATA_HOME:-$HOME/.local/share}/plasma/plasmoids/org.kde.plasma.kdefusion"
+  rm -rf "$PLASMOID_DIR"
+  mkdir -p "$PLASMOID_DIR"
+  cp -a "$PLASMOID_SRC/." "$PLASMOID_DIR/"
+fi
 install -m755 target/release/kdefusiond "$BINDIR/kdefusiond"
 install -m755 target/release/kdefusionctl "$BINDIR/kdefusionctl"
 install -m755 target/release/kdefusion "$BINDIR/kdefusion"

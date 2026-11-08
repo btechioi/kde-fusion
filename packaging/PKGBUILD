@@ -1,6 +1,6 @@
 # Maintainer: KDE Fusion contributors <kdefusion@example.invalid>
 pkgname=kde-fusion
-pkgver=0.1.16
+pkgver=0.1.17
 pkgrel=1
 pkgdesc="KDE-native desktop mirroring and extending over Sunshine and Moonlight"
 arch=('x86_64')
@@ -49,6 +49,10 @@ package() {
   elif command -v qml >/dev/null 2>&1; then
     install -Dm755 "$(command -v qml)" "$pkgdir/usr/lib/kdefusion/kdefusion"
   fi
+
+  # Install the Plasma widget.
+  install -d "$pkgdir/usr/share/plasma/plasmoids/org.kde.plasma.kdefusion"
+  cp -a plasmoid/. "$pkgdir/usr/share/plasma/plasmoids/org.kde.plasma.kdefusion/"
 
   install -Dm644 packaging/kdefusion.desktop \
     "$pkgdir/usr/share/applications/kdefusion.desktop"

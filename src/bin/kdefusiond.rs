@@ -148,11 +148,14 @@ async fn run() -> Result<()> {
         installer: installer.clone(),
     });
 
-    // StatusNotifierItem tray.  The QML side cannot own one on this Qt/Plasma
-    // combination, so the daemon does.  Commands are handled in the wait loop
-    // below.
+    // StatusNotifierItem tray.  Disabled by default now that the Plasma widget
+    // (plasmoid) is installed; re-enable via ui.tray_enabled if desired.
     let (tray_tx, mut tray_rx) = tokio::sync::mpsc::unbounded_channel::<TrayCommand>();
-    let tray_handle = tray::spawn(tray_tx.clone(), config.device.name.clone()).await;
+    let tray_handle = if config.ui.tray_enabled {
+        tray::spawn(tray_tx.clone(), config.device.name.clone()).await
+    } else {
+        None
+    };
     let _tray_tx = tray_tx;
     if let Some(handle) = tray_handle.clone() {
         let session = session.clone();

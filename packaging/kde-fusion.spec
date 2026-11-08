@@ -3,7 +3,7 @@
 # source tarball in ~/rpmbuild/SOURCES).
 
 Name:           kde-fusion
-Version:        0.1.16
+Version:        0.1.17
 Release:        1%{?dist}
 Summary:        KDE-native desktop mirroring and extending over Sunshine and Moonlight
 
@@ -52,6 +52,10 @@ elif command -v qml >/dev/null 2>&1; then
   install -Dm755 "$(command -v qml)" %{buildroot}%{_libdir}/kdefusion/kdefusion
 fi
 
+# Install the Plasma widget.
+mkdir -p %{buildroot}%{_datadir}/plasma/plasmoids/org.kde.plasma.kdefusion
+cp -a plasmoid/. %{buildroot}%{_datadir}/plasma/plasmoids/org.kde.plasma.kdefusion/
+
 mkdir -p %{buildroot}%{_datadir}/kdefusion
 cp -a qml %{buildroot}%{_datadir}/kdefusion/qml
 
@@ -68,13 +72,16 @@ install -Dm644 systemd/kdefusiond.service %{buildroot}%{_userunitdir}/kdefusiond
 %{_bindir}/kdefusionctl
 %{_bindir}/kdefusion
 %{_libdir}/kdefusion/
-%{_datadir}/kdefusion/
+%{_datadir}/plasma/plasmoids/org.kde.plasma.kdefusion/
 %{_datadir}/applications/kdefusion.desktop
 %{_datadir}/icons/hicolor/scalable/apps/kdefusion.svg
 %{_datadir}/icons/hicolor/symbolic/apps/kdefusion-symbolic.svg
 %{_userunitdir}/kdefusiond.service
 
 %changelog
+* Sat Nov 07 2026 KDE Fusion contributors - 0.1.17-1
+- Install Plasma widget by default; disable tray by default.
+
 * Sat Nov 07 2026 KDE Fusion contributors - 0.1.16-1
 - Add Plasma widget (plasmoid) skeleton.
 
