@@ -1,3 +1,9 @@
+kde-fusion (0.1.13-1) unstable; urgency=medium
+
+  * UI: KDE Connect-style empty state.
+
+ -- KDE Fusion contributors <kdefusion@example.invalid>  Sat, 07 Nov 2026 00:00:00 +0000
+
 kde-fusion (0.1.12-1) unstable; urgency=medium
 
   * Move About back to sidebar; tray left-click opens Devices.
