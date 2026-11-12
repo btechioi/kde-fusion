@@ -155,11 +155,9 @@ impl StateStore {
                 if !name.is_empty() {
                     peer.name = name.to_string();
                 }
-                for addr in addresses {
-                    if !peer.addresses.contains(addr) {
-                        peer.addresses.push(addr.clone());
-                    }
-                }
+                // Replace (not append) so stale addresses from a previous IP are
+                // dropped once discovery reports the current ones.
+                peer.addresses = addresses.to_vec();
             }
         })
     }

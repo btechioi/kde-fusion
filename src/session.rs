@@ -188,9 +188,15 @@ impl SessionManager {
             peer.control_port
         };
         if let Some(discovered) = discovered {
-            for address in discovered.addresses {
-                if !addresses.contains(&address) {
-                    addresses.push(address);
+            if !discovered.addresses.is_empty() {
+                // Prefer fresh discovered addresses over stale stored ones.
+                addresses = discovered.addresses.clone();
+                let _ = self.state.touch_peer(peer_id, &addresses, &discovered.name);
+            } else {
+                for address in discovered.addresses {
+                    if !addresses.contains(&address) {
+                        addresses.push(address);
+                    }
                 }
             }
             if discovered.port != 0 {
