@@ -3,7 +3,7 @@
 # source tarball in ~/rpmbuild/SOURCES).
 
 Name:           kde-fusion
-Version:        0.1.22
+Version:        0.1.23
 Release:        1%{?dist}
 Summary:        KDE-native desktop mirroring and extending over Sunshine and Moonlight
 
@@ -80,6 +80,9 @@ install -Dm644 systemd/kdefusiond.service %{buildroot}%{_userunitdir}/kdefusiond
 %{_userunitdir}/kdefusiond.service
 
 %changelog
+* Sat Nov 07 2026 KDE Fusion contributors - 0.1.23-1
+- Fix codec selection: default to H.264 when viewer HEVC decode unknown.
+
 * Sat Nov 07 2026 KDE Fusion contributors - 0.1.22-1
 - Fix discovery: prefer fresh addresses, drop stale IPs.
 

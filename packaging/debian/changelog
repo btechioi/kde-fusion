@@ -1,3 +1,9 @@
+kde-fusion (0.1.23-1) unstable; urgency=medium
+
+  * Fix codec selection: default to H.264 when viewer HEVC decode unknown.
+
+ -- KDE Fusion contributors <kdefusion@example.invalid>  Sat, 07 Nov 2026 00:00:00 +0000
+
 kde-fusion (0.1.22-1) unstable; urgency=medium
 
   * Fix discovery: prefer fresh addresses, drop stale IPs.
