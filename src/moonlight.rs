@@ -67,11 +67,13 @@ fn flatpak_installed() -> bool {
 /// `flatpak run`, which forwards the same CLI arguments.
 fn base_command() -> Option<Command> {
     if command_exists("moonlight") {
-        return Some(Command::new("moonlight"));
+        let mut command = Command::new("moonlight");
+        command.env("LIBVA_DRIVER_NAME", "i965");
+        return Some(command);
     }
     if flatpak_installed() {
         let mut command = Command::new("flatpak");
-        command.args(["run", FLATPAK_APP]);
+        command.args(["run", "--env=LIBVA_DRIVER_NAME=i965", FLATPAK_APP]);
         return Some(command);
     }
     None
@@ -147,7 +149,7 @@ impl MoonlightSpec {
             "--display-mode".to_string(),
             self.display_mode.clone(),
             "--video-decoder".to_string(),
-            "hardware".to_string(),
+            "auto".to_string(),
             "--resolution".to_string(),
             format!("{}x{}", self.width, self.height),
             "--fps".to_string(),
