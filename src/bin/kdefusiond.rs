@@ -103,6 +103,25 @@ async fn run() -> Result<()> {
         return Ok(());
     }
 
+    if std::env::var_os("WAYLAND_DISPLAY").is_none() {
+        if let Some(runtime) = std::env::var_os("XDG_RUNTIME_DIR") {
+            let runtime = std::path::PathBuf::from(runtime);
+            let mut names: Vec<String> = std::fs::read_dir(&runtime)
+                .ok()
+                .into_iter()
+                .flatten()
+                .filter_map(|e| e.ok())
+                .map(|e| e.file_name().to_string_lossy().to_string())
+                .filter(|n| n.starts_with("wayland-") && !n.ends_with(".lock"))
+                .collect();
+            names.sort();
+            if let Some(name) = names.pop() {
+                std::env::set_var("WAYLAND_DISPLAY", &name);
+                tracing::info!("detected Wayland display {name}");
+            }
+        }
+    }
+
     tracing::info!(
         "{APP_NAME} {VERSION} starting on {} (session={}, desktop={})",
         config.device.name,
